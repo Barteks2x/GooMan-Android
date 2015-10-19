@@ -3,21 +3,28 @@
     android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".WogMmActivity">
+    android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".WogMmActivity"
+                style="@style/Base.Widget.AppCompat.ProgressBar.Horizontal">
 
     <Button
-        android:layout_width="wrap_content"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="INSTALL"
-        android:id="@+id/installBtn"
+        android:text="install"
+        android:id="@+id/installApkBtn"
+        android:elevation="1dp"
+        android:layout_below="@+id/installModsBtn"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
-        android:elevation="1dp" />
+        android:enabled="false"
+        android:maxHeight="25dp"
+        android:textSize="15sp"
+        android:minHeight="25dp"
+        android:singleLine="true"
+        android:padding="10dp"/>
 
     <ProgressBar
-        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/installProgress"
@@ -26,10 +33,116 @@
         android:progress="0"
         android:indeterminate="false"
         android:visibility="invisible"
-        android:layout_below="@+id/installBtn"
+        android:minHeight="10dp"
+        android:layout_below="@+id/installApkBtn"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
+        android:layout_alignParentEnd="true"
+        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+        android:maxHeight="10dp"
+        android:padding="0dp"/>
+
+    <Button
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="clean"
+        android:id="@+id/cleanBtn"
+        android:enabled="false"
+        android:maxHeight="25dp"
+        android:singleLine="true"
+        android:textSize="15sp"
+        android:minHeight="25dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:padding="10dp"/>
+
+    <Button
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Setup mods"
+        android:id="@+id/installModsBtn"
+        android:layout_below="@+id/cleanBtn"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:enabled="false"
+        android:maxHeight="25dp"
+        android:singleLine="true"
+        android:textSize="15sp"
+        android:minHeight="25dp"
+        android:padding="10dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/textView"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:elegantTextHeight="false"
+        android:layout_below="@+id/installProgress"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:minHeight="15dp"
+        android:typeface="normal"
+        android:textSize="15dp"/>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="50dp"
+        android:id="@+id/linearLayout"
+        android:layout_alignLeft="@+id/textView"
+        android:layout_alignStart="@+id/textView"
+        android:layout_alignParentBottom="true"
+        android:layout_below="@+id/textView">
+
+        <Button
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:text="u\np"
+            android:id="@+id/upBtn"
+            android:layout_below="@+id/textView"
+            android:layout_alignRight="@+id/linearLayout"
+            android:layout_alignEnd="@+id/linearLayout"
+            android:layout_weight="1"/>
+
+        <Button
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:text="d\no\nw\nn"
+            android:id="@+id/downBtn"
+            android:layout_centerVertical="true"
+            android:layout_alignRight="@+id/linearLayout"
+            android:layout_alignEnd="@+id/linearLayout"
+            android:layout_weight="1"/>
+    </LinearLayout>
+
+    <HorizontalScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:id="@+id/horizontalScrollView"
+        android:layout_below="@+id/textView"
+        android:layout_toRightOf="@+id/linearLayout"
+        android:layout_alignRight="@+id/textView"
+        android:layout_alignEnd="@+id/textView"
+        android:fillViewport="true">
+
+        <GridView
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:id="@+id/modsGrid"
+            android:numColumns="1"
+            android:choiceMode="singleChoice"
+            android:padding="0dp"
+            android:stretchMode="columnWidth"
+            android:listSelector="@drawable/list_selector"
+            android:clickable="true"/>
+    </HorizontalScrollView>
 
 </RelativeLayout>

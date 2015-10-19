@@ -1,6 +1,5 @@
 <resources>
-    <string name="app_name">WoG Mod Manager</string>
+    <string name="app_name">GooMan</string>
 
-    <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
 </resources>

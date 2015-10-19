@@ -13,4 +13,8 @@ public final class Assert {
             throw new AssertionError(message);
         }
     }
+
+    {
+        System.out.println("test");
+    }
 }
