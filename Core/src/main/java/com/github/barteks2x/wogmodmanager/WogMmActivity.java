@@ -6,8 +6,10 @@ import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.support.v7.app.ActionBarActivity;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -25,9 +27,12 @@ import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.goofans.gootool.util.ProgressListener;
 import com.goofans.gootool.wog.WorldOfGoo;
+
+import org.askerov.dynamicgrid.DynamicGridView;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,25 +51,54 @@ public class WogMmActivity extends ActionBarActivity {
   public Button installApkBtn;
   public Button cleanBtn;
   public Button installModsBtn;
-
-  private Button upBtn, downBtn;
+  public Button changeOrder;
 
   private ProgressBar pb;
 
-  private GridView modsGrid;
+  private DynamicGridView modsGrid;
+  private ModListDynamicGridViewAdapter modListAdapter;
+  private HorizontalScrollView scrollView;
 
   private TextView text;
 
-  //HACK
-  public static int selected = -1;
+  private CountDownTimer timer = new CountDownTimer(5000, 10000) {
+    @Override
+    public void onTick(long millisUntilFinished) {}
 
+    @Override
+    public void onFinish() {
+      modsGrid.stopEditMode();
+    }
+  };
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_wog_mm);
 
-    this.modsGrid = (GridView) findViewById(R.id.modsGrid);
+    this.scrollView = (HorizontalScrollView) findViewById(R.id.horizontalScrollView);
 
+    this.modsGrid = (DynamicGridView) findViewById(R.id.modsGrid);
+    this.modsGrid.setAdapter(modListAdapter = new ModListDynamicGridViewAdapter(this, this.modsGrid));
+    this.modsGrid.setEditModeEnabled(true);
+    this.modsGrid.setWobbleInEditMode(false);
+    this.modsGrid.setOnDragListener(new DynamicGridView.OnDragListener() {
+      @Override
+      public void onDragStarted(int position) {
+        timer.cancel();
+      }
+
+      @Override
+      public void onDragPositionsChanged(int oldPosition, int newPosition) {
+      }
+    });
+    this.modsGrid.setOnDropListener(new DynamicGridView.OnDropListener() {
+      @Override
+      public void onActionDrop() {
+        timer.start();
+      }
+    });
+
+    this.scrollView = (HorizontalScrollView) findViewById(R.id.horizontalScrollView);
     this.pb = (ProgressBar) findViewById(R.id.installProgress);
     this.pb.setInterpolator(new LinearInterpolator());
 
@@ -79,43 +113,18 @@ public class WogMmActivity extends ActionBarActivity {
     this.installApkBtn = (Button) findViewById(R.id.installApkBtn);
     this.installApkBtn.setOnClickListener(new ApkInstaller(this, pb, text));
 
-    this.upBtn = (Button) findViewById(R.id.upBtn);
-    this.downBtn = (Button) findViewById(R.id.downBtn);
-
-
-    upBtn.setOnClickListener(new View.OnClickListener() {
+    this.changeOrder = (Button) findViewById(R.id.changeOrderButton);
+    changeOrder.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        if (selected <= 1) {
-          return;
+        if(modsGrid.isEditMode()) {
+          modsGrid.stopEditMode();
+        } else {
+          modsGrid.startEditMode();
+          timer.start();
         }
-        ArrayAdapter<Map.Entry<String, String>> a = (ArrayAdapter<Map.Entry<String, String>>) modsGrid.getAdapter();
-        Map.Entry<String, String> m = a.getItem(selected);
-        a.remove(m);
-        a.insert(m, selected - 1);
-        selected--;
       }
     });
-
-    downBtn.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        if(selected == -1 || selected < 1) {
-          return;
-        }
-        ArrayAdapter<Map.Entry<String, String>> a = (ArrayAdapter<Map.Entry<String, String>>) modsGrid.getAdapter();
-        if (selected == a.getCount()-1) {
-          return;
-        }
-        Map.Entry<String, String> m = a.getItem(selected);
-        a.remove(m);
-        a.insert(m, selected + 1);
-        selected++;
-      }
-    });
-
-
-
     new AsyncTask<Void, ProgressData, Void>() {
 
       @Override
@@ -151,82 +160,19 @@ public class WogMmActivity extends ActionBarActivity {
           }
 
           Set<String> enabledMods = new HashSet<String>(IOUtils.getLines(txt));
-          ArrayAdapter<Map.Entry<String, String>> a = new ArrayAdapter<Map.Entry<String, String>>(WogMmActivity.this, android.R.layout.simple_list_item_1) {
-            @Override
-            public View getView(final int position, View convertView, ViewGroup parent) {
-              final Map.Entry<String, String> item = getItem(position);
-              TextView tv1;
-              CheckBox cb;
-              LinearLayout ll;
 
-              if (convertView == null) {
-                tv1 = new TextView(WogMmActivity.this);
-                tv1.setTextSize(15);
-                tv1.setSingleLine();
-                tv1.setGravity(Gravity.LEFT);
-                tv1.setPadding(5, 5, 5, 5);
-                tv1.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
-                        LinearLayout.LayoutParams.FILL_PARENT,
-                        (float) 3.0));
-
-
-                ll = new LinearLayout(WogMmActivity.this);
-                ll.setOrientation(LinearLayout.HORIZONTAL);
-                ll.setPadding(5, 5, 5, 10);
-
-                tv1.setText(item.getKey());
-
-                cb = new CheckBox(getContext());
-                cb.setChecked(Boolean.parseBoolean(item.getValue()));
-                cb.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                  @Override
-                  public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    item.setValue(isChecked + "");
-                  }
-                });
-
-                ll.addView(cb);
-                ll.addView(tv1);
-
-              } else {
-                ll = (LinearLayout) convertView;
-                tv1 = (TextView) ll.getChildAt(1);
-                cb = (CheckBox) ll.getChildAt(0);
-                cb.setChecked(Boolean.parseBoolean(item.getValue()));
-                tv1.setText(item.getKey());
-              }
-
-
-              tv1.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-                  selected = position;
-                  return true;
-                }
-              });
-              return ll;
-            }
-          };
-          a.add(new StringPair("Mod List", "On"));
-          modsGrid.setAdapter(a);
-          int maxWidth = 0;
+          int width = 0;
           for (File f : files) {
             String name = f.getName();
-            int w = getTextWidth(name) + 20;
-            if(w > maxWidth) {
-              maxWidth = w;
-            }
             if (!name.endsWith(".goomod")) {
               continue;
             }
             boolean enabled = enabledMods.contains(name);
 
-            a.add(new StringPair(name, enabled+""));
+            modListAdapter.add(new ModListDynamicGridViewAdapter.GoomodEntry(name, enabled));
+            width = Math.max(width, getTextWidth(name));
           }
-          modsGrid.setColumnWidth(maxWidth);
-          modsGrid.setMinimumWidth(maxWidth);
-
-
+          modsGrid.setColumnWidth(width + 40);
         } catch (IOException e) {
           throw new RuntimeException(e);
         }
@@ -239,7 +185,7 @@ public class WogMmActivity extends ActionBarActivity {
         int text_width = 0;
 
         paint.setTypeface(Typeface.DEFAULT);// your preference here
-        paint.setTextSize(15);// have this the same as your text size
+        paint.setTextSize(16);// have this the same as your text size
 
         String text = s;
 
@@ -248,6 +194,7 @@ public class WogMmActivity extends ActionBarActivity {
         text_width =  bounds.width();
         return text_width;
       }
+
       @Override
       protected void onPreExecute() {
         pb.setVisibility(View.VISIBLE);
@@ -286,6 +233,7 @@ public class WogMmActivity extends ActionBarActivity {
   public boolean onCreateOptionsMenu(Menu menu) {
     // Inflate the menu; this adds items to the action bar if it is present.
     getMenuInflater().inflate(R.menu.menu_wog_mm, menu);
+
     return true;
   }
 
@@ -304,6 +252,7 @@ public class WogMmActivity extends ActionBarActivity {
     return super.onOptionsItemSelected(item);
   }
 
+
   public void disableButtons() {
     cleanBtn.setEnabled(false);
     installModsBtn.setEnabled(false);
@@ -314,32 +263,5 @@ public class WogMmActivity extends ActionBarActivity {
     cleanBtn.setEnabled(true);
     installModsBtn.setEnabled(true);
     installApkBtn.setEnabled(true);
-  }
-
-  private static final class StringPair implements Map.Entry<String, String> {
-
-    private String b;
-    private final String a;
-
-    public StringPair(String a, String b) {
-      this.a = a;
-      this.b = b;
-    }
-    @Override
-    public String getKey() {
-      return a;
-    }
-
-    @Override
-    public String getValue() {
-      return b;
-    }
-
-    @Override
-    public String setValue(String object) {
-      String x = b;
-      this.b = object;
-      return x;
-    }
   }
 }

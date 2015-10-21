@@ -14,19 +14,11 @@ public class WoGInitData {
   private static ProgressListener pl;
 
   public static void setContext(Context c) {
-    if (context == null) {
-      context = c;
-    } else {
-      throw new IllegalStateException();
-    }
+    context = c;
   }
 
   public static void setPackageManager(PackageManager pm) {
-    if (pman == null) {
-      pman = pm;
-    } else {
-      throw new IllegalStateException();
-    }
+    pman = pm;
   }
 
   public static void setProgressListener(ProgressListener listener) {

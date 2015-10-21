@@ -45,11 +45,12 @@ public class GoomodInstaller implements View.OnClickListener {
         pb.setVisibility(View.VISIBLE);
         text.setVisibility(View.VISIBLE);
 
-        ArrayAdapter<Map.Entry<String, String>> a = (ArrayAdapter<Map.Entry<String, String>>) modsGrid.getAdapter();
+        ModListDynamicGridViewAdapter a = (ModListDynamicGridViewAdapter) modsGrid.getAdapter();
 
-        for(int i = 1; i < a.getCount(); i++) {
-          if(Boolean.parseBoolean(a.getItem(i).getValue()))
-            mods.add(a.getItem(i).getKey());
+        for(int i = 0; i < a.getCount(); i++) {
+          ModListDynamicGridViewAdapter.GoomodEntry entry = (ModListDynamicGridViewAdapter.GoomodEntry) a.getItem(i);
+          if(entry.isEnabled())
+            mods.add(entry.getName());
         }
       }
 
