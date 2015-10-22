@@ -18,6 +18,7 @@ import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.github.barteks2x.wogmodmanager.DuplicateAddinException;
 import com.github.barteks2x.wogmodmanager.WoGInitData;
 import com.goofans.gootool.addins.Addin;
 import com.goofans.gootool.addins.AddinFactory;
@@ -251,7 +252,7 @@ public abstract class WorldOfGoo
       // Check we don't already have an addin with this ID
       for (Addin availableAddin : availableAddins) {
         if (availableAddin.getId().equals(addinId)) {
-          throw new IOException("An addin with id " + addinId + " already exists!");
+          throw new DuplicateAddinException("An addin with id " + addinId + " already exists!");
         }
       }
     }

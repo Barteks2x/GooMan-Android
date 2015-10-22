@@ -80,9 +80,9 @@
         android:id="@+id/modsGridFrame"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:layout_alignLeft="@+id/textView"
-        android:layout_above="@+id/changeOrderButton"
-        android:layout_below="@+id/textView">
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/textView"
+        android:layout_above="@+id/linearLayout">
 
         <org.askerov.dynamicgrid.DynamicGridView
             android:id="@+id/modsGrid"
@@ -92,13 +92,59 @@
             android:columnWidth="1000dp"/>
     </FrameLayout>
 
-    <Button
-        android:layout_width="wrap_content"
+    <GridLayout
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="Change order"
-        android:id="@+id/changeOrderButton"
+        android:id="@+id/linearLayout"
+        android:columnCount="3"
+        android:rowCount="1"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignRight="@+id/modsGridFrame"/>
+        android:layout_alignParentRight="true">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add"
+            android:id="@+id/addBtn"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:layout_column="0"
+            android:layout_columnSpan="1"
+            android:layout_columnWeight="1"
+            android:layout_row="0"
+            android:layout_gravity="fill_horizontal"
+            android:layout_rowSpan="1"
+            android:layout_rowWeight="1"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/rmBtn"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"
+            android:layout_row="0"
+            android:layout_column="1"
+            android:layout_columnSpan="1"
+            android:layout_columnWeight="1"
+            android:layout_gravity="fill_horizontal"
+            android:layout_rowSpan="1"
+            android:layout_rowWeight="1"
+            android:text="Remove"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Change order"
+            android:id="@+id/changeOrderButton"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:layout_column="2"
+            android:layout_columnSpan="1"
+            android:layout_columnWeight="1"
+            android:layout_row="0"
+            android:layout_rowSpan="1"
+            android:layout_rowWeight="1"
+            android:layout_gravity="fill_horizontal"/>
+    </GridLayout>
 
 </RelativeLayout>
