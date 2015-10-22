@@ -60,6 +60,7 @@ public class ModListDynamicGridViewAdapter extends BaseDynamicGridAdapter {
         @Override
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
           entry.enabled = isChecked;
+          titleText.setTextColor(entry.isEnabled() ? Color.BLACK : Color.GRAY);
         }
       });
     }
@@ -67,10 +68,12 @@ public class ModListDynamicGridViewAdapter extends BaseDynamicGridAdapter {
 
   public static class GoomodEntry {
     private final String name;
+    private final String id;
     private boolean enabled;
 
-    public GoomodEntry(String name, boolean enabled) {
+    public GoomodEntry(String name, String id, boolean enabled) {
       this.name = name;
+      this.id = id;
       this.enabled = enabled;
     }
 
@@ -80,6 +83,10 @@ public class ModListDynamicGridViewAdapter extends BaseDynamicGridAdapter {
 
     public boolean isEnabled() {
       return enabled;
+    }
+
+    public String getId() {
+      return id;
     }
   }
 }

@@ -2,7 +2,9 @@ package com.github.barteks2x.wogmodmanager;
 
 import android.util.Log;
 
+import com.goofans.gootool.ToolPreferences;
 import com.goofans.gootool.util.ProgressListener;
+import com.goofans.gootool.util.Utilities;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -14,7 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -221,4 +223,44 @@ public class IOUtils {
     s.close();
     return l;
   }
+
+  public static void deleteDirContent(File dir) {
+    for(File sub : dir.listFiles()) {
+      deleteFile(sub);
+    }
+  }
+
+  public static void deleteFile(File file) {
+    if(file.isDirectory()) {
+      deleteDirContent(file);
+    }
+    file.delete();
+  }
+
+  public static void copyFilesExcept(File src, File dest, String... ignoredFiles) {
+    Set<String> toIgnore = new HashSet<String>();
+    toIgnore.addAll(Arrays.asList(ignoredFiles));
+
+    try {
+      copyFilesExcept(src, dest, toIgnore);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static void copyFilesExcept(File src, File dest, Set<String> toIgnore) throws IOException {
+    for(File file : src.listFiles()) {
+      if(toIgnore.contains(file.getName())) {
+        continue;
+      }
+      if(file.isDirectory()) {
+        File dir = new File(dest, file.getName());
+        dir.mkdir();
+        copyFilesExcept(file, dir, toIgnore);
+      } else {
+        Utilities.copyFile(file, new File(dest, file.getName()));
+      }
+    }
+  }
+
 }

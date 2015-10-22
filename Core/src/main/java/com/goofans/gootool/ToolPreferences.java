@@ -5,9 +5,11 @@
 
 package com.goofans.gootool;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+
 import net.infotrek.util.TextUtil;
 
-import java.util.prefs.Preferences;
 import java.util.prefs.BackingStoreException;
 import java.util.Random;
 import java.util.Map;
@@ -18,6 +20,7 @@ import java.util.logging.Level;
 import java.io.IOException;
 import java.io.PrintStream;
 
+import com.github.barteks2x.wogmodmanager.WoGInitData;
 import com.goofans.gootool.util.VersionSpec;
 
 /**
@@ -31,7 +34,7 @@ public class ToolPreferences
 {
   private static final Logger log = Logger.getLogger(ToolPreferences.class.getName());
 
-  private static final Preferences PREFS = Preferences.userNodeForPackage(ToolPreferences.class);
+  private static final SharedPreferences PREFS = WoGInitData.getContext().getSharedPreferences("GooManPrefs", Context.MODE_PRIVATE);
 
   private static final String PREF_GOOTOOL_ID = "gootool_random_id";
   private static final String PREF_IGNORE_UPDATE = "gootool_ignore_update";
@@ -60,7 +63,7 @@ public class ToolPreferences
 
   public static synchronized String getGooToolId()
   {
-    String id = PREFS.get(PREF_GOOTOOL_ID, null);
+    String id = PREFS.getString(PREF_GOOTOOL_ID, null);
     if (id != null) return id;
 
     // base64 converts each 3  bytes to 4 bytes, so we want to use a multiple of 3 bytes (24 bits).
@@ -72,7 +75,7 @@ public class ToolPreferences
 
     id = TextUtil.base64Encode(idBytes);
 
-    PREFS.put(PREF_GOOTOOL_ID, id);
+    setString(PREF_GOOTOOL_ID, id);
     return id;
   }
 
@@ -86,7 +89,7 @@ public class ToolPreferences
   {
     log.finer("Is ignoring update? " + version);
 
-    String ignoreVersion = PREFS.get(PREF_IGNORE_UPDATE, null);
+    String ignoreVersion = PREFS.getString(PREF_IGNORE_UPDATE, null);
     log.finer("Current setting: " + ignoreVersion);
 
     return ignoreVersion != null && ignoreVersion.equals(version.toString());
@@ -100,7 +103,7 @@ public class ToolPreferences
   public static void setIgnoreUpdate(VersionSpec version)
   {
     log.fine("Ignoring update " + version);
-    PREFS.put(PREF_IGNORE_UPDATE, version.toString());
+    setString(PREF_IGNORE_UPDATE, version.toString());
   }
 
   public static boolean isL10nEnabled()
@@ -110,72 +113,72 @@ public class ToolPreferences
 
   public static void setL10nEnabled(boolean enabled)
   {
-    PREFS.putBoolean(PREF_L10N_MODE, enabled);
+    setBoolean(PREF_L10N_MODE, enabled);
   }
 
   public static String getMruAddinDir()
   {
-    return PREFS.get(PREF_MRU_ADDIN_DIR, null);
+    return PREFS.getString(PREF_MRU_ADDIN_DIR, null);
   }
 
   public static void setMruAddinDir(String mruDir)
   {
-    PREFS.put(PREF_MRU_ADDIN_DIR, mruDir);
+    setString(PREF_MRU_ADDIN_DIR, mruDir);
   }
 
   public static String getMruTowerDir()
   {
-    return PREFS.get(PREF_MRU_TOWER_DIR, null);
+    return PREFS.getString(PREF_MRU_TOWER_DIR, null);
   }
 
   public static void setMruTowerDir(String mruDir)
   {
-    PREFS.put(PREF_MRU_TOWER_DIR, mruDir);
+    setString(PREF_MRU_TOWER_DIR, mruDir);
   }
 
   public static String getWindowPosition()
   {
-    return PREFS.get(PREF_WINDOW_POSITION, null);
+    return PREFS.getString(PREF_WINDOW_POSITION, null);
   }
 
   public static void setWindowPosition(String windowPosition)
   {
-    PREFS.put(PREF_WINDOW_POSITION, windowPosition);
+    setString(PREF_WINDOW_POSITION, windowPosition);
   }
 
   public static String getWogDir()
   {
-    return PREFS.get(PREF_WOG_DIR, null);
+    return PREFS.getString(PREF_WOG_DIR, null);
   }
 
   public static void setWogDir(String wogDir)
   {
-    PREFS.put(PREF_WOG_DIR, wogDir);
+    setString(PREF_WOG_DIR, wogDir);
   }
 
   public static String getCustomDir()
   {
-    return PREFS.get(PREF_CUSTOM_DIR, null);
+    return PREFS.getString(PREF_CUSTOM_DIR, null);
   }
 
   public static void setCustomDir(String customDir)
   {
-    PREFS.put(PREF_CUSTOM_DIR, customDir);
+    setString(PREF_CUSTOM_DIR, customDir);
   }
 
   public static String getGooFansUsername()
   {
-    return PREFS.get(PREF_GOOFANS_USERNAME, null);
+    return PREFS.getString(PREF_GOOFANS_USERNAME, null);
   }
 
   public static void setGooFansUsername(String username)
   {
-    PREFS.put(PREF_GOOFANS_USERNAME, username);
+    setString(PREF_GOOFANS_USERNAME, username);
   }
 
   public static String getGooFansPassword()
   {
-    String enc = PREFS.get(PREF_GOOFANS_PASSWORD, null);
+    String enc = PREFS.getString(PREF_GOOFANS_PASSWORD, null);
     if (enc == null) return null;
 
     try {
@@ -189,7 +192,7 @@ public class ToolPreferences
 
   public static void setGooFansPassword(String password)
   {
-    PREFS.put(PREF_GOOFANS_PASSWORD, TextUtil.base64Encode(password.getBytes()));
+    setString(PREF_GOOFANS_PASSWORD, TextUtil.base64Encode(password.getBytes()));
   }
 
   public static boolean isGooFansLoginOk()
@@ -199,7 +202,7 @@ public class ToolPreferences
 
   public static void setGooFansLoginOk(boolean ok)
   {
-    PREFS.putBoolean(PREF_GOOFANS_LOGINOK, ok);
+    setBoolean(PREF_GOOFANS_LOGINOK, ok);
   }
 
   public static boolean isBillboardDisable()
@@ -209,7 +212,7 @@ public class ToolPreferences
 
   public static void setBillboardDisable(boolean disable)
   {
-    PREFS.putBoolean(PREF_BILLBOARDS_DISABLE, disable);
+    setBoolean(PREF_BILLBOARDS_DISABLE, disable);
   }
 
   public static long getBillboardLastCheck()
@@ -219,7 +222,7 @@ public class ToolPreferences
 
   public static void setBillboardLastCheck(long lastCheck)
   {
-    PREFS.putLong(PREF_BILLBOARDS_LASTCHECK, lastCheck);
+    setLong(PREF_BILLBOARDS_LASTCHECK, lastCheck);
   }
 
   public static void setRatings(Map<String, Integer> ratings)
@@ -229,12 +232,12 @@ public class ToolPreferences
       if (sb.length() > 0) sb.append(RATINGS_SEPARATOR);
       sb.append(rating.getKey()).append(RATINGS_VALUE_SEPARATOR).append(rating.getValue());
     }
-    PREFS.put(PREF_RATINGS, sb.toString());
+    setString(PREF_RATINGS, sb.toString());
   }
 
   public static Map<String, Integer> getRatings()
   {
-    String ratingsReg = PREFS.get(PREF_RATINGS, null);
+    String ratingsReg = PREFS.getString(PREF_RATINGS, null);
     if (ratingsReg == null) {
       return new TreeMap<String, Integer>();
     }
@@ -263,15 +266,31 @@ public class ToolPreferences
    */
   public static void list(PrintStream out) throws BackingStoreException
   {
-    String[] prefKeys = PREFS.keys();
-    for (String prefKey : prefKeys) {
-      out.print(prefKey + "=");
-      if (prefKey.equals(PREF_GOOFANS_PASSWORD)) {
+    for (Map.Entry<String, ?> pref : PREFS.getAll().entrySet()) {
+      out.print(pref.getKey() + "=");
+      if (pref.getKey().equals(PREF_GOOFANS_PASSWORD)) {
         out.println("[hidden]");
-      }
-      else {
-        out.println(PREFS.get(prefKey, null));
+      } else {
+        out.println(pref.getValue());
       }
     }
+  }
+
+  private static void setBoolean(String key, boolean value) {
+    SharedPreferences.Editor editor = PREFS.edit();
+    editor.putBoolean(key, value);
+    editor.commit();
+  }
+
+  private static void setString(String key, String value) {
+    SharedPreferences.Editor editor = PREFS.edit();
+    editor.putString(key, value);
+    editor.commit();
+  }
+
+  private static void setLong(String key, long value) {
+    SharedPreferences.Editor editor = PREFS.edit();
+    editor.putLong(key, value);
+    editor.commit();
   }
 }

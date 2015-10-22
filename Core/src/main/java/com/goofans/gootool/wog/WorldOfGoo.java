@@ -5,6 +5,9 @@
 
 package com.goofans.gootool.wog;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -14,9 +17,8 @@ import java.util.List;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.prefs.Preferences;
 
-import com.goofans.gootool.ToolPreferences;
+import com.github.barteks2x.wogmodmanager.WoGInitData;
 import com.goofans.gootool.addins.Addin;
 import com.goofans.gootool.addins.AddinFactory;
 import com.goofans.gootool.addins.AddinFormatException;
@@ -83,9 +85,9 @@ public abstract class WorldOfGoo
 
   public abstract boolean isCustomDirSet();
 
-  public static Preferences getPreferences()
+  public SharedPreferences getPreferences()
   {
-    return Preferences.userNodeForPackage(ToolPreferences.class);
+    return WoGInitData.getContext().getSharedPreferences("GooManPrefs", Context.MODE_PRIVATE);
   }
 
   public abstract File getGameFile(String pathname) throws IOException;
@@ -170,9 +172,9 @@ public abstract class WorldOfGoo
 
   public abstract boolean isFirstCustomBuild() throws IOException;
 
-  private static void readPrivateConfig(Configuration c)
+  private void readPrivateConfig(Configuration c)
   {
-    Preferences p = getPreferences();
+    SharedPreferences p = getPreferences();
 
 //    String versionStr = p.get(WorldOfGoo.PREF_LASTVERSION, null);
 //    if (versionStr != null) {
@@ -182,9 +184,9 @@ public abstract class WorldOfGoo
 
     c.setAllowWidescreen(p.getBoolean(PREF_ALLOW_WIDESCREEN, c.isAllowWidescreen()));
     c.setSkipOpeningMovie(p.getBoolean(PREF_SKIP_OPENING_MOVIE, c.isSkipOpeningMovie()));
-    c.setWatermark(p.get(PREF_WATERMARK, ""));
+    c.setWatermark(p.getString(PREF_WATERMARK, ""));
 
-    String languageStr = p.get(PREF_LANGUAGE, null);
+    String languageStr = p.getString(PREF_LANGUAGE, null);
     if (languageStr != null) c.setLanguage(Language.getLanguageByCode(languageStr));
 
     Resolution configResolution = c.getResolution();
@@ -203,7 +205,7 @@ public abstract class WorldOfGoo
 
     c.setWindowsVolumeControl(p.getBoolean(PREF_WINDOWS_VOLUME_CONTROL, false));
 
-    String addins = p.get(PREF_ADDINS, null);
+    String addins = p.getString(PREF_ADDINS, null);
     if (addins != null) {
       StringTokenizer tok = new StringTokenizer(addins, ",");
       while (tok.hasMoreTokens()) {

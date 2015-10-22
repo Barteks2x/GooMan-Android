@@ -48,21 +48,6 @@
         android:visibility="invisible"/>
 
     <Button
-        android:id="@+id/cleanBtn"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:enabled="false"
-        android:maxHeight="25dp"
-        android:minHeight="25dp"
-        android:padding="10dp"
-        android:singleLine="true"
-        android:text="clean"
-        android:textSize="15sp"/>
-
-    <Button
         android:id="@+id/installModsBtn"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
@@ -70,13 +55,12 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"
         android:layout_alignParentStart="true"
-        android:layout_below="@+id/cleanBtn"
         android:enabled="false"
         android:maxHeight="25dp"
         android:minHeight="25dp"
         android:padding="10dp"
         android:singleLine="true"
-        android:text="Setup mods"
+        android:text="Save"
         android:textSize="15sp"/>
 
     <TextView
@@ -92,16 +76,13 @@
         android:textSize="15dp"
         android:typeface="normal"/>
 
-    <HorizontalScrollView
-        android:id="@+id/horizontalScrollView"
+    <FrameLayout
+        android:id="@+id/modsGridFrame"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:layout_alignLeft="@+id/textView"
         android:layout_above="@+id/changeOrderButton"
-        android:layout_below="@+id/textView"
-        android:fillViewport="false"
-        android:measureAllChildren="true"
-        android:minWidth="1000dp">
+        android:layout_below="@+id/textView">
 
         <org.askerov.dynamicgrid.DynamicGridView
             android:id="@+id/modsGrid"
@@ -109,7 +90,7 @@
             android:layout_height="wrap_content"
             android:numColumns="1"
             android:columnWidth="1000dp"/>
-    </HorizontalScrollView>
+    </FrameLayout>
 
     <Button
         android:layout_width="wrap_content"
@@ -118,6 +99,6 @@
         android:id="@+id/changeOrderButton"
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
-        android:layout_alignRight="@+id/horizontalScrollView"/>
+        android:layout_alignRight="@+id/modsGridFrame"/>
 
 </RelativeLayout>

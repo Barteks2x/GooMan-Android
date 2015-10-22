@@ -12,11 +12,18 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.util.Log;
 
+import com.github.barteks2x.wogmodmanager.AxmlModUtil;
 import com.github.barteks2x.wogmodmanager.WoGInitData;
 import com.github.barteks2x.wogmodmanager.IOUtils;
+import com.goofans.gootool.ToolPreferences;
+import com.goofans.gootool.util.Utilities;
 
+import org.xml.sax.SAXParseException;
+
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -90,24 +97,24 @@ public class WorldOfGooAndroid extends WorldOfGoo {
       Log.i(TAG, "World of Goo apk not found. Is it installed?");
       return;
     }
-    WoGInitData.getProgressListener().beginStep("Extracting original APK", true);
-    if(!getLastrunBool("original_apk_extracted")) {
-      IOUtils.extractZip(new File(originalLocation), ORIGINAL_EXTRACTED_DIR, WoGInitData.getProgressListener());
+    if(lastRunData.get("original_apk_extracted").equals("true")) {
+      return;
     }
-    WoGInitData.getProgressListener().beginStep("Extracting APK to temp directory", true);
-    if(!getLastrunBool("modded_temp_extracted")) {
-      IOUtils.extractZip(new File(originalLocation), TEMP_MODDED_DIR, WoGInitData.getProgressListener());
-    }
+    forceClean();
     lastRunData.put("original_apk_extracted", "true");
-    lastRunData.put("modded_temp_extracted", "true");
     saveLastRun();
   }
 
   public void forceClean() {
     WoGInitData.getProgressListener().beginStep("Extracting original APK", true);
     IOUtils.extractZip(WOG_APK_FILE, ORIGINAL_EXTRACTED_DIR, WoGInitData.getProgressListener());
-    WoGInitData.getProgressListener().beginStep("Extracting APK to temp directory", true);
-    IOUtils.extractZip(WOG_APK_FILE, TEMP_MODDED_DIR, WoGInitData.getProgressListener());
+    WoGInitData.getProgressListener().beginStep("Deleting old modded directory", false);
+    IOUtils.deleteDirContent(TEMP_MODDED_DIR);
+
+    WoGInitData.getProgressListener().beginStep("Copying original files to new directory", false);
+    IOUtils.copyFilesExcept(ORIGINAL_EXTRACTED_DIR, TEMP_MODDED_DIR, "assets");
+
+    AxmlModUtil.modifyFiles();
   }
 
   private void loadOrCreateLastRun() throws IOException {

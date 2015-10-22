@@ -5,6 +5,9 @@
 
 package com.goofans.gootool.wog;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+
 import javax.xml.transform.TransformerException;
 import java.io.*;
 import java.util.ArrayList;
@@ -12,8 +15,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.prefs.Preferences;
 
+import com.github.barteks2x.wogmodmanager.IOUtils;
+import com.github.barteks2x.wogmodmanager.WoGInitData;
 import com.goofans.gootool.ToolPreferences;
 import com.goofans.gootool.addins.*;
 import com.goofans.gootool.model.Configuration;
@@ -35,8 +39,6 @@ public class ConfigurationWriterTask extends ProgressIndicatingTask
   private static final List<String> skippedFiles = Arrays.asList("Thumbs.db");
 
   private final Configuration configuration;
-  private static final String IRRKLANG_DLL = "irrKlang.dll";
-  private static final String REAL_IRRKLANG_DLL = "RealIrrKlang.dll";
 
   public ConfigurationWriterTask(Configuration configuration)
   {
@@ -167,16 +169,17 @@ public class ConfigurationWriterTask extends ProgressIndicatingTask
     beginStep("Writing tool preferences", false);
 
     // Tool preferences
-    Preferences p = Preferences.userNodeForPackage(ToolPreferences.class);
+    SharedPreferences prefs = WoGInitData.getContext().getSharedPreferences("GooManPrefs", Context.MODE_PRIVATE);
+    SharedPreferences.Editor p = prefs.edit();
     log.log(Level.FINEST, "ConfigurationWriterTask got p: " + this);
 
-    p.put(WorldOfGoo.PREF_LASTVERSION, Version.RELEASE.toString());
+    p.putString(WorldOfGoo.PREF_LASTVERSION, Version.RELEASE.toString());
     p.putBoolean(WorldOfGoo.PREF_ALLOW_WIDESCREEN, c.isAllowWidescreen());
     p.putBoolean(WorldOfGoo.PREF_SKIP_OPENING_MOVIE, c.isSkipOpeningMovie());
-    p.put(WorldOfGoo.PREF_WATERMARK, c.getWatermark());
+    p.putString(WorldOfGoo.PREF_WATERMARK, c.getWatermark());
 
     if (c.getLanguage() != null) {
-      p.put(WorldOfGoo.PREF_LANGUAGE, c.getLanguage().getCode());
+      p.putString(WorldOfGoo.PREF_LANGUAGE, c.getLanguage().getCode());
     }
 
     Resolution resolution = c.getResolution();
@@ -195,7 +198,8 @@ public class ConfigurationWriterTask extends ProgressIndicatingTask
       sb.append(s);
     }
 
-    p.put(WorldOfGoo.PREF_ADDINS, sb.toString());
+    p.putString(WorldOfGoo.PREF_ADDINS, sb.toString());
+    p.commit();
   }
 
   /*
@@ -219,7 +223,7 @@ public class ConfigurationWriterTask extends ProgressIndicatingTask
     if (c.getWatermark().length() > 0) {
       File textFile = worldOfGoo.getCustomGameFile("properties/text.xml.bin");
       try {
-        Merger merger = new Merger(textFile, new InputStreamReader(getClass().getResourceAsStream("/watermark.xsl")));
+        Merger merger = new Merger(textFile, new InputStreamReader(IOUtils.getResource("watermark.xsl")));
         merger.setTransformParameter("watermark", c.getWatermark());
         merger.merge();
         merger.writeEncoded(textFile);
@@ -277,6 +281,10 @@ public class ConfigurationWriterTask extends ProgressIndicatingTask
     }
   }
 
+  public int getNumSteps() {
+    return 4 + configuration.getEnabledAddins().size();
+  }
+
   @SuppressWarnings({"UseOfSystemOutOrSystemErr", "HardCodedStringLiteral", "HardcodedFileSeparator", "DuplicateStringLiteralInspection"})
   public static void main(String[] args) throws Exception
   {
@@ -322,6 +330,8 @@ public class ConfigurationWriterTask extends ProgressIndicatingTask
         System.out.println("progress: " + percent);
       }
     });
+
+
 
     writer.run();
   }

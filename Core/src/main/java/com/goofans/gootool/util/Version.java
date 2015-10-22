@@ -5,6 +5,8 @@
 
 package com.goofans.gootool.util;
 
+import com.github.barteks2x.wogmodmanager.IOUtils;
+
 import java.util.Date;
 import java.util.Properties;
 import java.util.Locale;
@@ -34,16 +36,16 @@ public class Version
   public static final String RELEASE_FULL;
   public static final String RELEASE_FRIENDLY;
 
-  public static final String BUILD_USER;
-  public static final Date BUILD_DATE;
-  public static final String BUILD_JAVA;
-  public static final String BUILD_OS;
+  //public static final String BUILD_USER;
+  //public static final Date BUILD_DATE;
+  //public static final String BUILD_JAVA;
+  //public static final String BUILD_OS;
 
   static {
     try {
       Properties p = new Properties();
-      p.load(Version.class.getResourceAsStream("/release.properties"));
-      p.load(Version.class.getResourceAsStream("/build.properties"));
+      p.load(IOUtils.getResource("release.properties"));
+      //p.load(Version.class.getResourceAsStream("build.properties"));
 
       RELEASE_MAJOR = Integer.parseInt(p.getProperty("release.major", "0"));
       RELEASE_MINOR = Integer.parseInt(p.getProperty("release.minor", "0"));
@@ -68,10 +70,10 @@ public class Version
       }
       RELEASE_FRIENDLY = releaseFriendly.toString();
 
-      BUILD_USER = p.getProperty("build.user");
-      BUILD_DATE = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ENGLISH).parse(p.getProperty("build.date"));
-      BUILD_JAVA = p.getProperty("build.java");
-      BUILD_OS = p.getProperty("build.os");
+      //BUILD_USER = p.getProperty("build.user");
+      //BUILD_DATE = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ENGLISH).parse(p.getProperty("build.date"));
+      //BUILD_JAVA = p.getProperty("build.java");
+      //BUILD_OS = p.getProperty("build.os");
 
     }
     catch (Exception e) {

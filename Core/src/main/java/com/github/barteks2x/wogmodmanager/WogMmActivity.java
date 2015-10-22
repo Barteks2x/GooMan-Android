@@ -1,47 +1,25 @@
 package com.github.barteks2x.wogmodmanager;
 
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Rect;
-import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.support.v7.app.ActionBarActivity;
-import android.text.TextUtils;
-import android.util.Log;
-import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.animation.LinearInterpolator;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
-import android.widget.GridView;
-import android.widget.HorizontalScrollView;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import com.goofans.gootool.addins.Addin;
+import com.goofans.gootool.model.Configuration;
 import com.goofans.gootool.util.ProgressListener;
 import com.goofans.gootool.wog.WorldOfGoo;
 
 import org.askerov.dynamicgrid.DynamicGridView;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 
 public class WogMmActivity extends ActionBarActivity {
@@ -49,7 +27,6 @@ public class WogMmActivity extends ActionBarActivity {
   public static final String TAG = "WogMM";
 
   public Button installApkBtn;
-  public Button cleanBtn;
   public Button installModsBtn;
   public Button changeOrder;
 
@@ -57,7 +34,6 @@ public class WogMmActivity extends ActionBarActivity {
 
   private DynamicGridView modsGrid;
   private ModListDynamicGridViewAdapter modListAdapter;
-  private HorizontalScrollView scrollView;
 
   private TextView text;
 
@@ -68,14 +44,13 @@ public class WogMmActivity extends ActionBarActivity {
     @Override
     public void onFinish() {
       modsGrid.stopEditMode();
+      changeOrder.setEnabled(true);
     }
   };
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_wog_mm);
-
-    this.scrollView = (HorizontalScrollView) findViewById(R.id.horizontalScrollView);
 
     this.modsGrid = (DynamicGridView) findViewById(R.id.modsGrid);
     this.modsGrid.setAdapter(modListAdapter = new ModListDynamicGridViewAdapter(this, this.modsGrid));
@@ -98,14 +73,10 @@ public class WogMmActivity extends ActionBarActivity {
       }
     });
 
-    this.scrollView = (HorizontalScrollView) findViewById(R.id.horizontalScrollView);
     this.pb = (ProgressBar) findViewById(R.id.installProgress);
     this.pb.setInterpolator(new LinearInterpolator());
 
     this.text = (TextView) findViewById(R.id.textView);
-
-    this.cleanBtn = (Button) findViewById(R.id.cleanBtn);
-    this.cleanBtn.setOnClickListener(new CleanTask(this, pb, text));
 
     this.installModsBtn = (Button) findViewById(R.id.installModsBtn);
     this.installModsBtn.setOnClickListener(new GoomodInstaller(this, pb, text, modsGrid));
@@ -114,15 +85,12 @@ public class WogMmActivity extends ActionBarActivity {
     this.installApkBtn.setOnClickListener(new ApkInstaller(this, pb, text));
 
     this.changeOrder = (Button) findViewById(R.id.changeOrderButton);
-    changeOrder.setOnClickListener(new View.OnClickListener() {
+    this.changeOrder.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        if(modsGrid.isEditMode()) {
-          modsGrid.stopEditMode();
-        } else {
-          modsGrid.startEditMode();
-          timer.start();
-        }
+        modsGrid.startEditMode();
+        timer.start();
+        changeOrder.setEnabled(false);
       }
     });
     new AsyncTask<Void, ProgressData, Void>() {
@@ -144,55 +112,19 @@ public class WogMmActivity extends ActionBarActivity {
 
         //TODO: DO IT IN BACKGROUND
         try {
-          File loc = WorldOfGoo.getTheInstance().getAddinsDir();
-          File txt = new File(loc, "goomod-list.txt");
+          WorldOfGoo wog = WorldOfGoo.getTheInstance();
 
-          File[] files = loc.listFiles();
-          if (!txt.exists()) {
-            txt.createNewFile();
+          wog.updateInstalledAddins();
+          Configuration cfg = WorldOfGoo.getTheInstance().readConfiguration();
 
-            PrintWriter pw = new PrintWriter(txt);
-            for (File f : files) {
-              if (f.getName().endsWith(".goomod"))
-                pw.println(f.getName());
-            }
-            pw.close();
+          for(Addin addin :wog.getAvailableAddins()) {
+            boolean enabled = cfg.isEnabledAdddin(addin.getId());
+
+            modListAdapter.add(new ModListDynamicGridViewAdapter.GoomodEntry(addin.getName(), addin.getId(), enabled));
           }
-
-          Set<String> enabledMods = new HashSet<String>(IOUtils.getLines(txt));
-
-          int width = 0;
-          for (File f : files) {
-            String name = f.getName();
-            if (!name.endsWith(".goomod")) {
-              continue;
-            }
-            boolean enabled = enabledMods.contains(name);
-
-            modListAdapter.add(new ModListDynamicGridViewAdapter.GoomodEntry(name, enabled));
-            width = Math.max(width, getTextWidth(name));
-          }
-          modsGrid.setColumnWidth(width + 40);
         } catch (IOException e) {
           throw new RuntimeException(e);
         }
-      }
-
-      private int getTextWidth(String s) {
-        Paint paint = new Paint();
-        Rect bounds = new Rect();
-
-        int text_width = 0;
-
-        paint.setTypeface(Typeface.DEFAULT);// your preference here
-        paint.setTextSize(16);// have this the same as your text size
-
-        String text = s;
-
-        paint.getTextBounds(text, 0, text.length(), bounds);
-
-        text_width =  bounds.width();
-        return text_width;
       }
 
       @Override
@@ -202,19 +134,21 @@ public class WogMmActivity extends ActionBarActivity {
         WoGInitData.setContext(getApplicationContext());
 
         WoGInitData.setProgressListener(new ProgressListener() {
-          private int step = -1;
           private String stepName;
 
           @Override
           public void beginStep(String taskDescription, boolean progressAvailable) {
-            step++;
             stepName = taskDescription;
-            progressStep(0);
+            if(!progressAvailable) {
+              progressStep(0.5f);
+            } else {
+              progressStep(0);
+            }
           }
 
           @Override
           public void progressStep(float percent) {
-            publishProgress(new ProgressData(stepName, percent + step));
+            publishProgress(new ProgressData(stepName, percent));
           }
         });
       }
@@ -222,7 +156,7 @@ public class WogMmActivity extends ActionBarActivity {
       @Override
       protected void onProgressUpdate(ProgressData... i) {
         ProgressData pd = i[i.length - 1];
-        pb.setProgress((int) (pd.progress * 100 / 2));
+        pb.setProgress((int) (pd.progress * 100));
         text.setText(pd.name);
 
       }
@@ -254,13 +188,11 @@ public class WogMmActivity extends ActionBarActivity {
 
 
   public void disableButtons() {
-    cleanBtn.setEnabled(false);
     installModsBtn.setEnabled(false);
     installApkBtn.setEnabled(false);
   }
 
   public void enableButtons() {
-    cleanBtn.setEnabled(true);
     installModsBtn.setEnabled(true);
     installApkBtn.setEnabled(true);
   }
