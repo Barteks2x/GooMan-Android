@@ -118,7 +118,7 @@ public class AxmlModUtil {
     Assert.that(in.markSupported());
     int read;
     String toReplace = "World of Goo";
-    String replaceWith = "WoG Mod TEST";
+    String replaceWith = "  WoG Mods  ";
     Assert.that(toReplace.length() == replaceWith.length(), "length of the new name must be the same as the original name");
     while ((read = in.read()) != -1) {
       //assume that it contains only ASCII characters
