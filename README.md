@@ -24,7 +24,7 @@ Once files from .apk files are extracted - gootool code is used to install goomo
 
 Limitations
 -----------
-*It's impossible to access saves from the original installation on unrooted devices
-*Visible game name must have the the same or smaller length as the original (it is possible to change it, but it's very hard)
-*On unrooted devices the modified game can't be installed automatically without user interaction
-*Modifying the .apk is quite slow - it may be an issue for those who frequently add/remove/enable/disable mods
+ * It's impossible to access saves from the original installation on unrooted devices
+ * Visible game name must have the the same or smaller length as the original (it is possible to change it, but it's  very hard)
+ * On unrooted devices the modified game can't be installed automatically without user interaction
+ * Modifying the .apk is quite slow - it may be an issue for those who frequently add/remove/enable/disable mods
