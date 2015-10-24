@@ -94,7 +94,6 @@ public class ApkInstaller implements View.OnClickListener {
       File zipFile = new File(WorldOfGooAndroid.get().DATA_DIR, "modded_unsigned.apk");
       if (!this.putIntoApk(srcDir, zipFile)) return false;
 
-
       taskNum++;
       setTaskProgress("Signing APK", 0);
       File signed = new File(WorldOfGooAndroid.get().DATA_DIR, "modded.apk");

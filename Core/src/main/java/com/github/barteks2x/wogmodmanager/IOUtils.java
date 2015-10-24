@@ -1,5 +1,7 @@
 package com.github.barteks2x.wogmodmanager;
 
+import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
@@ -29,6 +31,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Field;
 import java.net.URISyntaxException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -49,6 +52,17 @@ import kellinwood.zipio.ZipInput;
 import kellinwood.zipio.ZipOutput;
 
 public class IOUtils {
+  private static final Field ZIO_ENTRY_DATA;
+
+  static{
+    try {
+      ZIO_ENTRY_DATA = ZioEntry.class.getDeclaredField("data");
+      ZIO_ENTRY_DATA.setAccessible(true);
+    } catch (NoSuchFieldException e) {
+      throw new ExceptionInInitializerError(e);
+    }
+  }
+
   public static final void extractZip(File f, File to, ProgressListener pl) {
     byte[] buffer = new byte[1024];
 
@@ -136,7 +150,12 @@ public class IOUtils {
 
     Map<String, ZioEntry> zinEntries = zin.getEntries();
 
+    //new entries will be assets, so take example asset
+    //zipio will copy properties of example file like zip specification version, compression method etc...
+    //they can't be set in any other way, except reflection hacks
+    //and because we use hacks to decrease memory usage - we need to get cloned entry before we add files to apk.
     ZioEntry baseEntry = zinEntries.get("assets/res/islands/island1.xml.mp3").getClonedEntry("UNNAMED");
+
     Iterator<Map.Entry<String, ZioEntry>> it = zinEntries.entrySet().iterator();
     //write entries that are there already
     while(it.hasNext()) {
@@ -158,12 +177,17 @@ public class IOUtils {
       it.remove();
       //HACK HACK HACK!
       //Force zipio to delete current OutputStream by creating a new one
-      //It will still neave the ZioEntry in memory, but the big ByteArrayOutputStream will be deleted
+      //It will still leave the ZioEntry in memory, but the big ByteArrayOutputStream will be deleted
       entry.getValue().getOutputStream();
+      //HACK2!
+      //Use reflection to clear data field in ZioEntry
+      //At this point data is already written so this field won't be used anymore
+      try {
+        ZIO_ENTRY_DATA.set(entry.getValue(), null);
+      } catch (IllegalAccessException e) {
+        throw new AssertionError(e);
+      }
     }
-    //new entries will be assets, so take example asset
-    //zipio will copy properties of example file like zip specification version, compression method etc...
-    //they can't be set in any other way, except reflection hacks
 
 
     int stripLength = sourceDir.getCanonicalPath().length() + 1;
@@ -176,8 +200,13 @@ public class IOUtils {
       os.close();
       zout.write(e);
       in.close();
-      //HACK. Just in case the ZioEntry is stored SOMEWHERE:
+      //Hacks simillar to these above. Just in case the ZioEntry is stored SOMEWHERE:
       e.getOutputStream();
+      try {
+        ZIO_ENTRY_DATA.set(e, null);
+      } catch (IllegalAccessException ex) {
+        throw new AssertionError(ex);
+      }
     }
 
     zout.close();
@@ -200,45 +229,12 @@ public class IOUtils {
     }
   }
 
-  private static void addFilesFromDir(File sourceDir, ZipOutputStream out, File startPath) throws IOException {
-    Assert.that(sourceDir.getPath().startsWith(startPath.getPath()));
-
-    byte[] buf = new byte[10*1024];
-    for(File f : sourceDir.listFiles()) {
-      if (f.isDirectory()) {
-        addFilesFromDir(f, out, startPath);
-        continue;
-      }
-      System.out.println("Adding file to zip: " + f);
-      out.putNextEntry(new ZipEntry(f.getPath().substring(startPath.getPath().length() + 1)));
-
-      InputStream in = new BufferedInputStream(new FileInputStream(f));
-      int l;
-      while ((l = in.read(buf)) != -1) {
-        out.write(buf, 0, l);
-      }
-      in.close();
-      out.closeEntry();
-    }
-  }
-
   public static void writeInToOut(InputStream in, OutputStream out) throws IOException {
     byte[] buf = new byte[16*1024];
     int l;
     while((l = in.read(buf)) != -1) {
       out.write(buf, 0, l);
     }
-  }
-
-
-  public static List<String> getLines(File file) throws FileNotFoundException {
-    Scanner s = new Scanner(file);
-    List<String> l = new ArrayList<>();
-    while(s.hasNextLine()) {
-      l.add(s.nextLine());
-    }
-    s.close();
-    return l;
   }
 
   public static void deleteDirContent(File dir) {
@@ -281,14 +277,6 @@ public class IOUtils {
   }
 
   private static final boolean DEBUG = false; // Set to true to enable logging
-
-  public static final String MIME_TYPE_AUDIO = "audio/*";
-  public static final String MIME_TYPE_TEXT = "text/*";
-  public static final String MIME_TYPE_IMAGE = "image/*";
-  public static final String MIME_TYPE_VIDEO = "video/*";
-  public static final String MIME_TYPE_APP = "application/*";
-
-  public static final String HIDDEN_PREFIX = ".";
 
   /**
    * Gets the extension of a file name, like ".png" or ".jpg".
@@ -438,6 +426,7 @@ public class IOUtils {
    * @see #getFile(Context, Uri)
    * @author paulburke
    */
+  @SuppressLint("NewApi")
   public static String getPath(final Context context, final Uri uri) {
 
     if (DEBUG)
@@ -535,5 +524,19 @@ public class IOUtils {
       }
     }
     return null;
+  }
+
+  public static int getFirstFileByte(String fileName) {
+    int read;
+    InputStream is = null;
+    try {
+      is= new FileInputStream(fileName);
+      read = is.read();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    } finally {
+      try{if(is!=null)is.close();}catch(IOException ex){ex.printStackTrace();}
+    }
+    return read;
   }
 }

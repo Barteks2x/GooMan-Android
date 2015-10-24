@@ -206,7 +206,7 @@ public class WorldOfGooAndroid extends WorldOfGoo {
   private File getAndroidGameFile(File loc, String filename) {
     //TODO: actually check if it's a file
     if(filename.contains(".")) {
-      if(filename.endsWith(".bin")) {
+      if(filename.endsWith(".bin") || filename.endsWith(".xml")) {
         return new File(loc, filename.substring(0, filename.length() - 4) + ".mp3");
       } else if(filename.endsWith(".png") ||
               filename.endsWith(".binltl") ||

@@ -3,6 +3,7 @@ package com.github.barteks2x.wogmodmanager;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -13,7 +14,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.LinearInterpolator;
+import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -121,6 +124,24 @@ public class WogMmActivity extends ActionBarActivity {
     });
 
     this.rmBtn = (Button) findViewById(R.id.rmBtn);
+    this.rmBtn.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        ModListDynamicGridViewAdapter adapter = (ModListDynamicGridViewAdapter)modsGrid.getAdapter();
+        if(adapter.isRemoveMode()) {
+          adapter.onEndRemoveMode();
+          ((Button)v).setText("Remove");
+          Toast.makeText(WogMmActivity.this, "Deleted selected goomods. Don't forget to save changes", Toast.LENGTH_LONG).show();
+          enableButtons();
+        } else {
+          adapter.startRemoveMode();
+          ((Button)v).setText("Delete selected");
+          Toast.makeText(WogMmActivity.this, "Long click on goomod to select", Toast.LENGTH_LONG).show();
+          disableButtons();
+          v.setEnabled(true);
+        }
+      }
+    });
 
     this.changeOrder = (Button) findViewById(R.id.changeOrderButton);
     this.changeOrder.setOnClickListener(new View.OnClickListener() {
@@ -239,7 +260,7 @@ public class WogMmActivity extends ActionBarActivity {
       }
       for(Addin addin : WorldOfGoo.getAvailableAddins()) {
         if(!alreadyInstalled.contains(addin.getId())) {
-          adapter.add(new ModListDynamicGridViewAdapter.GoomodEntry(addin.getName(), addin.getId(), false));
+          adapter.add(new ModListDynamicGridViewAdapter.GoomodEntry(addin, false));
         }
       }
       Toast.makeText(context, "Successfully added addin. Don't forget to save changes", Toast.LENGTH_SHORT).show();
@@ -272,7 +293,7 @@ public class WogMmActivity extends ActionBarActivity {
         for(Addin addin : wog.getAvailableAddins()) {
           boolean enabled = cfg.isEnabledAdddin(addin.getId());
 
-          modListAdapter.add(new ModListDynamicGridViewAdapter.GoomodEntry(addin.getName(), addin.getId(), enabled));
+          modListAdapter.add(new ModListDynamicGridViewAdapter.GoomodEntry(addin, enabled));
         }
       } catch (IOException e) {
         throw new RuntimeException(e);

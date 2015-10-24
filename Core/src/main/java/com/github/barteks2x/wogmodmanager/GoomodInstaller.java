@@ -65,7 +65,8 @@ public class GoomodInstaller implements View.OnClickListener {
 
         for(int i = 0; i < a.getCount(); i++) {
           ModListDynamicGridViewAdapter.GoomodEntry entry = (ModListDynamicGridViewAdapter.GoomodEntry) a.getItem(i);
-          enabled.add(entry.getId());
+          if(entry.isEnabled())
+            enabled.add(entry.getId());
         }
       }
 

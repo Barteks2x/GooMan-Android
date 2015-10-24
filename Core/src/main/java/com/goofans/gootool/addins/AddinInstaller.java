@@ -5,16 +5,8 @@
 
 package com.goofans.gootool.addins;
 
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-
-import net.infotrek.util.EncodingUtil;
-
-import javax.xml.transform.TransformerException;
-import java.io.*;
-import java.util.*;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import com.github.barteks2x.wogmodmanager.IOUtils;
 import com.goofans.gootool.io.GameFormat;
@@ -22,7 +14,32 @@ import com.goofans.gootool.io.UnicodeReader;
 import com.goofans.gootool.util.Utilities;
 import com.goofans.gootool.util.XMLUtil;
 import com.goofans.gootool.wog.WorldOfGoo;
-import org.w3c.dom.*;
+
+import net.infotrek.util.EncodingUtil;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.xml.transform.TransformerException;
 
 /**
  * Installs an addin into the current custom WoG.
@@ -30,8 +47,7 @@ import org.w3c.dom.*;
  * @author David Croft (davidc@goofans.com)
  * @version $Id: AddinInstaller.java 427 2010-10-11 15:09:13Z david $
  */
-public class AddinInstaller
-{
+public class AddinInstaller {
   private static final Logger log = Logger.getLogger(AddinInstaller.class.getName());
 
   private static final String[] ALLOWED_ROOT_DIRS = new String[]{"properties/", "res/"};
@@ -52,12 +68,10 @@ public class AddinInstaller
   private static final String EXTENSION_BIN = ".bin";
   private static final String EXTENSION_XML = ".xml";
 
-  private AddinInstaller()
-  {
+  private AddinInstaller() {
   }
 
-  public static void installAddin(Addin addin) throws IOException, AddinFormatException
-  {
+  public static void installAddin(Addin addin) throws IOException, AddinFormatException {
     log.log(Level.FINE, "Installing addin " + addin.getId());
 
     AddinReader addinReader = AddinFactory.getAddinReader(addin.getDiskFile());
@@ -70,8 +84,7 @@ public class AddinInstaller
           doStringsFile(addin, addinReader.getInputStream(STRINGS_FILE));
         }
       }
-    }
-    finally {
+    } finally {
       addinReader.close();
     }
 
@@ -84,8 +97,7 @@ public class AddinInstaller
     log.log(Level.FINE, "Addin " + addin.getId() + " installed");
   }
 
-  private static void doPasses(Addin addin, AddinReader addinReader) throws IOException, AddinFormatException
-  {
+  private static void doPasses(Addin addin, AddinReader addinReader) throws IOException, AddinFormatException {
     for (int pass = 0; pass < PASSES.length; ++pass) {
       String passPrefix = PASSES[pass];
       log.log(Level.FINER, "Pass " + pass + " (looking in " + passPrefix + ")");
@@ -99,16 +111,14 @@ public class AddinInstaller
 
         try {
           doPassOnFile(addin, pass, fileName, is);
-        }
-        finally {
+        } finally {
           is.close();
         }
       }
     }
   }
 
-  private static void doPassOnFile(Addin addin, int pass, String fileName, InputStream is) throws IOException, AddinFormatException
-  {
+  private static void doPassOnFile(Addin addin, int pass, String fileName, InputStream is) throws IOException, AddinFormatException {
 //    System.out.println("Doing pass " + pass + " on file " + fileName);
 
     // Validate that the file extension(s) are lower case (#0000275).
@@ -128,17 +138,14 @@ public class AddinInstaller
 
     if (pass == PASS_OVERRIDE) {
       processOverride(fileName, is);
-    }
-    else if (pass == PASS_MERGE) {
+    } else if (pass == PASS_MERGE) {
       processMerge(fileName, is);
-    }
-    else if (pass == PASS_COMPILE) {
+    } else if (pass == PASS_COMPILE) {
       processCompile(addin, fileName, is);
     }
   }
 
-  private static void checkDirOk(String fileName) throws AddinFormatException
-  {
+  private static void checkDirOk(String fileName) throws AddinFormatException {
     boolean isOk = false;
     for (String allowedRootDir : ALLOWED_ROOT_DIRS) {
       if (fileName.startsWith(allowedRootDir)) {
@@ -152,56 +159,65 @@ public class AddinInstaller
     }
   }
 
-  private static void processOverride(String fileName, InputStream is) throws IOException, AddinFormatException
-  {
+  private static void processOverride(String fileName, InputStream is) throws IOException, AddinFormatException {
+    if (!is.markSupported())
+      is = new BufferedInputStream(is);
     log.log(Level.FINER, "Override " + fileName);
     checkDirOk(fileName);
 
     if (fileName.endsWith(EXTENSION_BIN)) {
       throw new AddinFormatException("Bin files are not allowed in the override directory");
-    }
-    else
-    {
+    } else {
       File destFile = WorldOfGoo.getTheInstance().getCustomGameFile(fileName);
       Utilities.mkdirsOrException(destFile.getParentFile());
 
       OutputStream os = new FileOutputStream(destFile);
       try {
-        Utilities.copyStreams(is, os);
+        if (fileName.endsWith(EXTENSION_PNG)) {
+          //assume this is correct image in one of these formats: ONG, JPEG, BMP
+          is.mark(1);
+          int firstByte = is.read();
+          is.reset();
+          //PNG files begin with 89 50 4E 47 0D 0A 1A 0A
+          //JPEG image files begin with FF D8 FF E0 or FF D8 FF DB
+          //BMP image files begin with 42 4D
+          if (firstByte == 0x89) {
+            Utilities.copyStreams(is, os);
+          } else if (firstByte == 0xFF || firstByte == 0x42) {
+            Bitmap bmp = BitmapFactory.decodeStream(is);
+            bmp.compress(Bitmap.CompressFormat.PNG, 100, os);
+          } else {
+            throw new AddinFormatException("Unsupported image format");
+          }
+        }
       } finally {
         os.close();
-      }
-
-      if (fileName.endsWith(EXTENSION_PNG)) {
-        // Force the image to be read
-        BitmapFactory.decodeFile(destFile.getPath());
       }
     }
   }
 
-  private static void processMerge(String fileName, InputStream is) throws IOException, AddinFormatException
-  {
+  private static void processMerge(String fileName, InputStream is) throws IOException, AddinFormatException {
     log.log(Level.FINER, "Merge " + fileName);
     checkDirOk(fileName);
 
-    if (!fileName.endsWith(EXTENSION_XSL)) throw new AddinFormatException("Addin has a non-XSLT file in the merge directory: " + fileName);
+    if (!fileName.endsWith(EXTENSION_XSL))
+      throw new AddinFormatException("Addin has a non-XSLT file in the merge directory: " + fileName);
 
     File mergeFile = WorldOfGoo.getTheInstance().getCustomGameFile(fileName.substring(0, fileName.length() - 4) + EXTENSION_BIN);
 
-    if (!mergeFile.exists()) throw new AddinFormatException("Addin tries to merge a nonexistent file: " + fileName);
+    if (!mergeFile.exists())
+      throw new AddinFormatException("Addin tries to merge a nonexistent file: " + fileName);
 
     try {
       Merger merger = new Merger(mergeFile, new UnicodeReader(is, GameFormat.DEFAULT_CHARSET));
       merger.merge();
       merger.writeEncoded(mergeFile);
-    }
-    catch (TransformerException e) {
+    } catch (TransformerException e) {
       throw new AddinFormatException("Error transforming " + fileName + ":\n" + e.getMessage(), e);
     }
   }
 
-  private static void processCompile(Addin addin, String fileName, InputStream is) throws IOException, AddinFormatException
-  {
+  private static void processCompile(Addin addin, String fileName, InputStream is) throws IOException, AddinFormatException {
     log.log(Level.FINER, "Compile " + fileName);
     checkDirOk(fileName);
 
@@ -209,26 +225,22 @@ public class AddinInstaller
       //if addin.getManifestVersion().compareTo(AddinFactory.SPEC_VERSION_1_2) >= 0) {
       //else
       throw new AddinFormatException("Animations are not supported in this spec-version");
-    }
-    else if (fileName.endsWith(".movie.xml")) {
+    } else if (fileName.endsWith(".movie.xml")) {
       //if addin.getManifestVersion().compareTo(AddinFactory.SPEC_VERSION_1_2) >= 0) {
       //else
       throw new AddinFormatException("Movies are not supported in this spec-version");
-    }
-    else if (fileName.endsWith(EXTENSION_XML)) {
+    } else if (fileName.endsWith(EXTENSION_XML)) {
       File destFile = WorldOfGoo.getTheInstance().getCustomGameFile(fileName.substring(0, fileName.length() - 4) + EXTENSION_BIN);
       Utilities.mkdirsOrException(destFile.getParentFile());
 
       String xml = Utilities.readStreamIntoString(is);
       GameFormat.encodeBinFile(destFile, xml.getBytes(GameFormat.DEFAULT_CHARSET));
-    }
-    else {
+    } else {
       throw new AddinFormatException("Addin has an uncompilable file in the compile directory: " + fileName);
     }
   }
 
-  private static void installLevel(AddinLevel level) throws IOException, AddinFormatException
-  {
+  private static void installLevel(AddinLevel level) throws IOException, AddinFormatException {
     String levelNameId = "LEVEL_NAME_" + level.getDir().toUpperCase();
     String levelTextId = "LEVEL_TEXT_" + level.getDir().toUpperCase();
 
@@ -242,8 +254,7 @@ public class AddinInstaller
       merger.merge();
 //      System.out.println("s = " + s);
       merger.writeEncoded(textFile);
-    }
-    catch (TransformerException e) {
+    } catch (TransformerException e) {
       throw new AddinFormatException("Unable to merge level text", e);
     }
 
@@ -267,8 +278,7 @@ public class AddinInstaller
       }
       merger.merge();
       merger.writeEncoded(islandFile);
-    }
-    catch (TransformerException e) {
+    } catch (TransformerException e) {
       throw new AddinFormatException("Unable to merge level island", e);
     }
 
@@ -283,14 +293,12 @@ public class AddinInstaller
 //      System.out.println("s = " + s);
       merger.writeEncoded(islandSceneFile);
 //		<button id="lb_GoingUp" depth="8" x="-520" y="278" scalex="1" scaley="1" rotation="0" alpha="1" colorize="255,255,255"   up="IMAGE_SCENE_ISLAND1_LEVELMARKERA_UP" over="IMAGE_SCENE_ISLAND1_LEVELMARKERA_OVER" onclick="pl_GoingUp" onmouseenter="ss_GoingUp" onmouseexit="hs_GoingUp" />
-    }
-    catch (TransformerException e) {
+    } catch (TransformerException e) {
       throw new AddinFormatException("Unable to merge level island scene", e);
     }
   }
 
-  private static String makeString(String levelSubtitleId, Map<String, String> translations)
-  {
+  private static String makeString(String levelSubtitleId, Map<String, String> translations) {
     StringBuilder sb = new StringBuilder("<string id=\"");
 
     sb.append(levelSubtitleId).append("\"");
@@ -301,8 +309,7 @@ public class AddinInstaller
     return sb.toString();
   }
 
-  private static void addStringMap(Document d, Node namesNode, Map<String, String> x)
-  {
+  private static void addStringMap(Document d, Node namesNode, Map<String, String> x) {
     for (String nameKey : x.keySet()) {
       Element nameNode = (Element) namesNode.appendChild(d.createElement("string"));
       nameNode.setAttribute("lang", nameKey);
@@ -310,8 +317,7 @@ public class AddinInstaller
     }
   }
 
-  private static void doStringsFile(Addin addin, InputStream inputStream) throws IOException, AddinFormatException
-  {
+  private static void doStringsFile(Addin addin, InputStream inputStream) throws IOException, AddinFormatException {
     // Load game text.xml
     File gameTextFile = WorldOfGoo.getTheInstance().getCustomGameFile("properties/text.xml.bin");
     Document gameStringsDoc = XMLUtil.loadDocumentFromInputStream(new ByteArrayInputStream(GameFormat.decodeBinFile(gameTextFile)));
@@ -340,8 +346,7 @@ public class AddinInstaller
         // New string, just clone it across
         gameStringsDoc.getDocumentElement().appendChild(gameStringsDoc.importNode(addinString, false));
         gameStringsDoc.getDocumentElement().appendChild(gameStringsDoc.createTextNode("\n"));
-      }
-      else {
+      } else {
         // Existing string, copy all attributes except ID
         gameStringsDoc.getDocumentElement().appendChild(gameStringsDoc.createComment("Modified " + stringId));
         gameStringsDoc.getDocumentElement().appendChild(gameStringsDoc.createTextNode("\n"));
@@ -358,14 +363,12 @@ public class AddinInstaller
 
     try {
       GameFormat.encodeBinFile(gameTextFile, EncodingUtil.stringToBytesUtf8(XMLUtil.writeDocumentToString(gameStringsDoc)));
-    }
-    catch (TransformerException e) {
+    } catch (TransformerException e) {
       throw new IOException("Unable to write text.xml: " + e.getLocalizedMessage());
     }
   }
 
-  public static void main(String[] args) throws IOException, AddinFormatException
-  {
+  public static void main(String[] args) throws IOException, AddinFormatException {
     WorldOfGoo worldOfGoo = WorldOfGoo.getTheInstance();
     worldOfGoo.init();
     worldOfGoo.setCustomDir(new File("C:\\BLAH\\"));

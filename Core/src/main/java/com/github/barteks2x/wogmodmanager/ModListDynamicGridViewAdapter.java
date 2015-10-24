@@ -5,12 +5,16 @@ import android.graphics.Color;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import com.goofans.gootool.addins.Addin;
 
 import org.askerov.dynamicgrid.BaseDynamicGridAdapter;
 import org.askerov.dynamicgrid.DynamicGridView;
@@ -19,27 +23,62 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ModListDynamicGridViewAdapter extends BaseDynamicGridAdapter {
-  private Context context;
-  private DynamicGridView dgv;
+  private boolean removeMode = false;
 
   public ModListDynamicGridViewAdapter(Context context, DynamicGridView dgv) {
     super(context, new ArrayList<>(), 1);
-    this.context = context;
-    this.dgv = dgv;
   }
 
   @Override
-  public View getView(int position, View convertView, ViewGroup parent) {
+  public View getView(final int position, View convertView, ViewGroup parent) {
     ModViewHolder holder;
     if (convertView == null) {
       convertView = LayoutInflater.from(getContext()).inflate(R.layout.mod_item, null);
       holder = new ModViewHolder(convertView);
       convertView.setTag(holder);
+
     } else {
       holder = (ModViewHolder) convertView.getTag();
     }
+    convertView.setOnTouchListener(new View.OnTouchListener() {
+      @Override
+      public boolean onTouch(View v, MotionEvent event) {
+
+        if (isRemoveMode() && ((event.getAction() & MotionEvent.ACTION_MASK) == MotionEvent.ACTION_DOWN)) {
+
+          TextView titleText = (TextView) v.findViewById(R.id.mod_item_title);
+          CheckBox enabled = (CheckBox) v.findViewById(R.id.mod_item_enabled);
+          ModListDynamicGridViewAdapter.GoomodEntry entry = (ModListDynamicGridViewAdapter.GoomodEntry) getItem(position);
+          entry.setToRemove(!entry.isToRemove());
+          boolean newrm = entry.isToRemove();
+          titleText.setTextColor(newrm ? Color.RED : enabled.isEnabled() ? Color.BLACK : Color.GRAY);
+          return true;
+        }
+        return false;
+      }
+    });
     holder.build((GoomodEntry) getItem(position));
     return convertView;
+  }
+
+  public void startRemoveMode() {
+    this.removeMode = true;
+  }
+
+  public boolean isRemoveMode() {
+    return removeMode;
+  }
+
+  public void onEndRemoveMode() {
+    for(int i = getCount() - 1; i >= 0; i--) {
+      GoomodEntry e = (GoomodEntry) getItem(i);
+      if(e.isToRemove()) {
+        remove(e);
+        //TODO: make it async
+        e.getAddin().getDiskFile().delete();
+      }
+    }
+    removeMode = false;
   }
 
   private class ModViewHolder {
@@ -54,7 +93,6 @@ public class ModListDynamicGridViewAdapter extends BaseDynamicGridAdapter {
     void build(final GoomodEntry entry) {
       titleText.setText(entry.getName());
       titleText.setTextColor(entry.isEnabled() ? Color.BLACK : Color.GRAY);
-      titleText.requestLayout();
       enabled.setChecked(entry.isEnabled());
       enabled.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
         @Override
@@ -67,18 +105,17 @@ public class ModListDynamicGridViewAdapter extends BaseDynamicGridAdapter {
   }
 
   public static class GoomodEntry {
-    private final String name;
-    private final String id;
+    private final Addin addin;
     private boolean enabled;
+    private boolean toRemove;
 
-    public GoomodEntry(String name, String id, boolean enabled) {
-      this.name = name;
-      this.id = id;
+    public GoomodEntry(Addin addin, boolean enabled) {
+      this.addin = addin;
       this.enabled = enabled;
     }
 
     public String getName() {
-      return name;
+      return addin.getName();
     }
 
     public boolean isEnabled() {
@@ -86,7 +123,19 @@ public class ModListDynamicGridViewAdapter extends BaseDynamicGridAdapter {
     }
 
     public String getId() {
-      return id;
+      return addin.getId();
+    }
+
+    public Addin getAddin() {
+      return addin;
+    }
+
+    public boolean isToRemove() {
+      return toRemove;
+    }
+
+    public void setToRemove(boolean toRemove) {
+      this.toRemove = toRemove;
     }
   }
 }
