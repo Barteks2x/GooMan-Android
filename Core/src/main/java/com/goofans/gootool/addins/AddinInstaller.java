@@ -189,6 +189,8 @@ public class AddinInstaller {
           } else {
             throw new AddinFormatException("Unsupported image format");
           }
+        } else {
+          Utilities.copyStreams(is, os);
         }
       } finally {
         os.close();
