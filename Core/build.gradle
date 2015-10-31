@@ -22,7 +22,7 @@ android {
 
 dependencies {
     compile 'com.android.support:appcompat-v7:22.1.1'
-    compile 'kellinwood.android:zipsigner-lib:1.17'
+    compile 'kellinwood.android:zipsigner-lib:+'
     compile 'kellinwood.android:zipio-lib:1.8'
     testCompile 'junit:junit:4.12'
 }
